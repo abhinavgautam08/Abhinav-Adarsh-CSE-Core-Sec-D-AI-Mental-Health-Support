@@ -30,8 +30,13 @@
    git clone https://github.com/abhinavgautam08/Abhinav-Adarsh-CSE-Core-Sec-D-AI-Powered-Mental-Health-Support.git
    ```
 2. Install dependencies:
+
    ```bash
    npm install
+   ```
+3. Run This :
+```bash
+   npm install --legacy-peer-deps
    ```
 
 ### Running the App
