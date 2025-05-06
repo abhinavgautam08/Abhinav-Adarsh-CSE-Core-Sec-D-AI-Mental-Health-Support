@@ -27,8 +27,7 @@
 ### Installation
 1. Clone the repository:
    ```bash
-   git clone https://github.com/
-   cd mental-health-chatbot
+   git clone https://github.com/abhinavgautam08/Abhinav-Adarsh-CSE-Core-Sec-D-AI-Powered-Mental-Health-Support.git
    ```
 2. Install dependencies:
    ```bash
