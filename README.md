@@ -1,4 +1,4 @@
-# Abhinav-Adarsh-CSE-Core-Sec-D-AI-Powered-Mental-Health-Support
+# Abhinav-Adarsh CSE(Core) Section - D
 
 **Project Title:** Ai Powered Mental Health Support
 
