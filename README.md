@@ -9,7 +9,7 @@
 
 **Project Description:** This project is a Ai powered mental health support designed to provide supportive, therapeutic, and coaching conversations using AI. It adapts its responses based on the user's detected emotion and selected personality (supportive friend, therapist, or coach).
 
-**Video Explanation:** [Watch here](https://)  
+**Video Explanation:** [Watch here](https://krmangalameduin-my.sharepoint.com/personal/harsh_vardhan_krmangalam_edu_in/_layouts/15/stream.aspx?id=%2Fpersonal%2Fharsh%5Fvardhan%5Fkrmangalam%5Fedu%5Fin%2FDocuments%2FFirst%20year%20Projects%2FAi%20Powered%20Mental%20Health%20Support%2Fexplanation%2Emp4&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E6e2ffc54%2Dd214%2D4c62%2Db15b%2Df446de1e51d9)  
 
 
 ## Features
