@@ -1,7 +1,7 @@
 import { generateText } from "ai"
 import { createGoogleGenerativeAI } from "@ai-sdk/google"
 import type { Emotion, Message, Personality } from "@/lib/types"
-import { getApiKey, setApiKey } from "@/lib/api-config"
+import { getApiKey, setApiKey, getDefaultApiKey } from "@/lib/api-config"
 
 // Create a custom Google provider instance
 let googleAI: ReturnType<typeof createGoogleGenerativeAI> | null = null
@@ -57,6 +57,12 @@ const initializeGoogleAI = async (): Promise<boolean> => {
       return true
     } catch (error) {
       console.error("API key validation failed:", error)
+
+      // If this is the default API key and it failed, we should log a specific error
+      if (apiKey === getDefaultApiKey()) {
+        console.error("Default API key validation failed. The key may have expired or reached its quota limit.")
+      }
+
       apiKeyValidated = true
       apiKeyValid = false
       googleAI = null

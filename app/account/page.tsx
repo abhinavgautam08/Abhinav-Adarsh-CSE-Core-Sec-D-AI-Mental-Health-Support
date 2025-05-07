@@ -10,12 +10,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
-import { getApiKey, setApiKey } from "@/lib/api-config"
+import { getApiKey, setApiKey, clearApiKey, resetToDefaultApiKey, getDefaultApiKey } from "@/lib/api-config"
+import { updateApiKey } from "@/lib/ai-helpers"
 import { Switch } from "@/components/ui/switch"
 import { ModeToggle } from "@/components/mode-toggle"
-import { ArrowLeft, Key, Settings, Languages } from "lucide-react"
+import { ArrowLeft, Key, Settings, Languages, Check, X, Loader2, Copy, Trash } from "lucide-react"
 import Link from "next/link"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function AccountPage() {
   const { toast } = useToast()
@@ -24,6 +26,9 @@ export default function AccountPage() {
   // API key state
   const [apiKey, setApiKeyState] = useState("")
   const [isUpdatingApiKey, setIsUpdatingApiKey] = useState(false)
+  const [isTestingApiKey, setIsTestingApiKey] = useState(false)
+  const [apiKeyStatus, setApiKeyStatus] = useState<"valid" | "invalid" | "untested">("untested")
+  const [showApiKey, setShowApiKey] = useState(false)
 
   // Preferences state
   const [autoMessageEnabled, setAutoMessageEnabled] = useState(true)
@@ -39,6 +44,11 @@ export default function AccountPage() {
     // Load API key
     const savedApiKey = getApiKey() || ""
     setApiKeyState(savedApiKey)
+
+    // Check if API key is valid on load
+    if (savedApiKey) {
+      checkApiKeyValidity(savedApiKey)
+    }
 
     // Load other settings from localStorage if available
     try {
@@ -68,19 +78,56 @@ export default function AccountPage() {
     }
   }
 
+  // Check if API key is valid
+  const checkApiKeyValidity = async (keyToCheck: string) => {
+    setIsTestingApiKey(true)
+    try {
+      const valid = await updateApiKey(keyToCheck)
+      setApiKeyStatus(valid ? "valid" : "invalid")
+      return valid
+    } catch (error) {
+      console.error("Error checking API key validity:", error)
+      setApiKeyStatus("invalid")
+      return false
+    } finally {
+      setIsTestingApiKey(false)
+    }
+  }
+
   // Handle API key update
   const handleApiKeyUpdate = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsUpdatingApiKey(true)
 
     try {
-      // Update API key in local storage
-      setApiKey(apiKey)
+      if (!apiKey.trim()) {
+        toast({
+          title: "API Key Required",
+          description: "Please enter a valid API key.",
+          variant: "destructive",
+        })
+        setIsUpdatingApiKey(false)
+        return
+      }
 
-      toast({
-        title: "API Key Updated",
-        description: "Your API key has been updated successfully.",
-      })
+      // Test the API key before saving
+      const isValid = await checkApiKeyValidity(apiKey)
+
+      if (isValid) {
+        // Update API key in local storage
+        setApiKey(apiKey)
+
+        toast({
+          title: "API Key Updated",
+          description: "Your API key has been validated and saved successfully.",
+        })
+      } else {
+        toast({
+          title: "Invalid API Key",
+          description: "The API key could not be validated. Please check and try again.",
+          variant: "destructive",
+        })
+      }
     } catch (error) {
       console.error("Error updating API key:", error)
       toast({
@@ -90,6 +137,55 @@ export default function AccountPage() {
       })
     } finally {
       setIsUpdatingApiKey(false)
+    }
+  }
+
+  // Handle API key test
+  const handleTestApiKey = async () => {
+    if (!apiKey.trim()) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter an API key to test.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const isValid = await checkApiKeyValidity(apiKey)
+
+    if (isValid) {
+      toast({
+        title: "API Key Valid",
+        description: "The API key was successfully validated.",
+      })
+    } else {
+      toast({
+        title: "Invalid API Key",
+        description: "The API key could not be validated. Please check and try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  // Handle API key clear
+  const handleClearApiKey = () => {
+    setApiKeyState("")
+    clearApiKey()
+    setApiKeyStatus("untested")
+    toast({
+      title: "API Key Cleared",
+      description: "Your API key has been removed.",
+    })
+  }
+
+  // Copy API key to clipboard
+  const handleCopyApiKey = () => {
+    if (apiKey) {
+      navigator.clipboard.writeText(apiKey)
+      toast({
+        title: "API Key Copied",
+        description: "Your API key has been copied to clipboard.",
+      })
     }
   }
 
@@ -143,6 +239,17 @@ export default function AccountPage() {
     }
   }
 
+  // Handle reset to default API key
+  const handleResetToDefaultApiKey = () => {
+    resetToDefaultApiKey()
+    setApiKeyState(getDefaultApiKey())
+    checkApiKeyValidity(getDefaultApiKey())
+    toast({
+      title: "Default API Key Restored",
+      description: "The application's default API key has been restored.",
+    })
+  }
+
   return (
     <div className="container max-w-4xl py-6 space-y-6">
       <div className="flex items-center justify-between">
@@ -180,24 +287,97 @@ export default function AccountPage() {
         <TabsContent value="api-key">
           <Card>
             <CardHeader>
-              <CardTitle>API Key</CardTitle>
-              <CardDescription>Manage your Google Gemini API key</CardDescription>
+              <CardTitle>Google Gemini API Key</CardTitle>
+              <CardDescription>Manage your API key for AI-powered features</CardDescription>
             </CardHeader>
             <form onSubmit={handleApiKeyUpdate}>
               <CardContent className="space-y-4">
+                {apiKeyStatus === "valid" && (
+                  <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                    <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    <AlertDescription className="text-green-600 dark:text-green-400">
+                      Your API key is valid and working correctly.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {apiKeyStatus === "invalid" && (
+                  <Alert className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+                    <X className="h-4 w-4 text-red-600 dark:text-red-400" />
+                    <AlertDescription className="text-red-600 dark:text-red-400">
+                      Your API key is invalid or has expired. Please update it.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 <div className="space-y-2">
-                  <Label htmlFor="api-key">Google Gemini API Key</Label>
-                  <Input
-                    id="api-key"
-                    type="password"
-                    value={apiKey}
-                    onChange={(e) => setApiKeyState(e.target.value)}
-                    placeholder="Enter your API key"
-                  />
+                  <div className="flex justify-between items-center">
+                    <Label htmlFor="api-key">API Key</Label>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="h-6 px-2 text-xs"
+                    >
+                      {showApiKey ? "Hide" : "Show"}
+                    </Button>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      id="api-key"
+                      type={showApiKey ? "text" : "password"}
+                      value={apiKey}
+                      onChange={(e) => {
+                        setApiKeyState(e.target.value)
+                        setApiKeyStatus("untested")
+                      }}
+                      placeholder="Enter your Google Gemini API key"
+                      className={`pr-20 ${
+                        apiKeyStatus === "valid"
+                          ? "border-green-500 focus-visible:ring-green-300"
+                          : apiKeyStatus === "invalid"
+                            ? "border-red-500 focus-visible:ring-red-300"
+                            : ""
+                      }`}
+                    />
+                    <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
+                      {apiKey && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleCopyApiKey}
+                          className="h-6 w-6"
+                        >
+                          <Copy className="h-3 w-3" />
+                          <span className="sr-only">Copy API key</span>
+                        </Button>
+                      )}
+                      {apiKey && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleClearApiKey}
+                          className="h-6 w-6 text-red-500"
+                        >
+                          <Trash className="h-3 w-3" />
+                          <span className="sr-only">Clear API key</span>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     Your API key is stored locally and never sent to our servers.
+                    {apiKey === getDefaultApiKey() && (
+                      <span className="ml-1 text-green-600 dark:text-green-400">
+                        Currently using the default API key.
+                      </span>
+                    )}
                   </p>
                 </div>
+
                 <div className="p-4 bg-muted rounded-lg">
                   <h4 className="font-medium mb-2">How to get a Google Gemini API key:</h4>
                   <ol className="list-decimal list-inside space-y-1 text-sm">
@@ -219,9 +399,44 @@ export default function AccountPage() {
                   </ol>
                 </div>
               </CardContent>
-              <CardFooter>
-                <Button type="submit" disabled={isUpdatingApiKey} className="w-full sm:w-auto">
-                  {isUpdatingApiKey ? "Updating..." : "Update API Key"}
+              <CardFooter className="flex flex-col sm:flex-row gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResetToDefaultApiKey}
+                  className="w-full sm:w-auto"
+                >
+                  Reset to Default
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleTestApiKey}
+                  disabled={isTestingApiKey || !apiKey.trim()}
+                  className="w-full sm:w-auto"
+                >
+                  {isTestingApiKey ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Testing...
+                    </>
+                  ) : (
+                    "Test API Key"
+                  )}
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isUpdatingApiKey || isTestingApiKey || !apiKey.trim()}
+                  className="w-full sm:w-auto"
+                >
+                  {isUpdatingApiKey ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Save API Key"
+                  )}
                 </Button>
               </CardFooter>
             </form>
@@ -265,7 +480,14 @@ export default function AccountPage() {
               </CardContent>
               <CardFooter>
                 <Button type="submit" disabled={isUpdatingPreferences} className="w-full sm:w-auto">
-                  {isUpdatingPreferences ? "Saving..." : "Save Preferences"}
+                  {isUpdatingPreferences ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Save Preferences"
+                  )}
                 </Button>
               </CardFooter>
             </form>
@@ -309,7 +531,14 @@ export default function AccountPage() {
               </CardContent>
               <CardFooter>
                 <Button type="submit" disabled={isUpdatingLanguage} className="w-full sm:w-auto">
-                  {isUpdatingLanguage ? "Updating..." : "Update Language"}
+                  {isUpdatingLanguage ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Language"
+                  )}
                 </Button>
               </CardFooter>
             </form>

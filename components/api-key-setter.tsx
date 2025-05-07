@@ -1,21 +1,27 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { updateApiKey } from "@/lib/ai-helpers"
 import { useToast } from "@/hooks/use-toast"
-import { Key } from "lucide-react"
+import { Key, RefreshCw } from "lucide-react"
+import { getDefaultApiKey } from "@/lib/api-config"
 
 interface ApiKeySetterProps {
   onApiKeySet: (isValid: boolean) => void
 }
 
 export function ApiKeySetter({ onApiKeySet }: ApiKeySetterProps) {
-  const [apiKey, setApiKey] = useState("AIzaSyB5NXY1eAIjONF1FYT0fM5fZNZXXLxkz24")
+  const [apiKey, setApiKey] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+
+  // Load the default API key on component mount
+  useEffect(() => {
+    setApiKey(getDefaultApiKey())
+  }, [])
 
   const handleSetApiKey = async () => {
     if (!apiKey.trim()) {
@@ -58,6 +64,14 @@ export function ApiKeySetter({ onApiKeySet }: ApiKeySetterProps) {
     }
   }
 
+  const useDefaultKey = () => {
+    setApiKey(getDefaultApiKey())
+    toast({
+      title: "Default Key Set",
+      description: "The default API key has been entered. Click 'Set API Key' to use it.",
+    })
+  }
+
   return (
     <Card className="p-4">
       <h3 className="text-lg font-medium mb-4">Set Google API Key</h3>
@@ -72,9 +86,15 @@ export function ApiKeySetter({ onApiKeySet }: ApiKeySetterProps) {
           />
           <Key className="h-4 w-4 absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
         </div>
-        <Button onClick={handleSetApiKey} disabled={isLoading} className="w-full">
-          {isLoading ? "Validating..." : "Set API Key"}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={useDefaultKey} className="flex-1">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Use Default Key
+          </Button>
+          <Button onClick={handleSetApiKey} disabled={isLoading} className="flex-1">
+            {isLoading ? "Validating..." : "Set API Key"}
+          </Button>
+        </div>
         <p className="text-xs text-muted-foreground">
           Your API key is stored locally in your browser and is never sent to our servers.
         </p>
