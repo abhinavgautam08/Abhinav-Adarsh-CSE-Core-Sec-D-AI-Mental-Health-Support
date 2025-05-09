@@ -7,7 +7,7 @@ export const ai = createAI({
       "use server"
 
       // Check if API key exists and is not empty
-      if (!process.env.GOOGLE_API_KEY || process.env.GOOGLE_API_KEY.trim() === "AIzaSyB5NXY1eAIjONF1FYT0fM5fZNZXXLxkz24") {
+      if (!process.env.GOOGLE_API_KEY || process.env.GOOGLE_API_KEY.trim() === "YOUR-GEMINI-API") {
         console.warn("No Google API key found or key is empty, returning neutral emotion")
         return "neutral"
       }
