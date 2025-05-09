@@ -2,7 +2,7 @@
 // This file stores API keys and configuration settings
 
 // Default API key (can be set from environment variable or hardcoded for development)
-const DEFAULT_API_KEY = process.env.GOOGLE_API_KEY || "AIzaSyDYse5XWASbw7PUJf6ORbNG0djwmQcq_Dg"
+const DEFAULT_API_KEY = process.env.GOOGLE_API_KEY || "Enter Your Gemini API-KEY"
 
 // Store API key configuration
 let apiKey: string = DEFAULT_API_KEY
